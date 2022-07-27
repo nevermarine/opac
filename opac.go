@@ -15,30 +15,29 @@ const (
 	root_url     = "http://opac.hse.ru"
 )
 
+var (
+	login, password string
+	login_field     = "data[User][CodbarU]"
+	password_field  = "data[User][MotPasse]"
+	dry_run, help   bool
+	err             error
+)
+
 func main() {
-	var login, password string
-	var dry_run, help bool
-	var err error
+	ArgsInit()
 
-	flag.StringVarP(&login, "login", "l", "", "User login for HSE OPAC. Required.")
-	flag.StringVarP(&password, "pass", "p", "", "Password for HSE OPAC. Required.")
-	flag.BoolVarP(&dry_run, "dry-run", "n", false, "Do nothing, just print to stdout.")
-	flag.BoolVarP(&help, "help", "h", false, "Print this help message.")
-	flag.Parse()
-
+	// just exit
 	if login == "" || password == "" || help {
 		flag.PrintDefaults()
 		return
 	}
 
 	data := url.Values{
-		"data[User][CodbarU]":  {login},
-		"data[User][MotPasse]": {password},
+		login_field:    {login},
+		password_field: {password},
 	}
+	doc := DataRequest(data)
 
-	resp, _ := http.PostForm(library_link, data)
-	doc, _ := html.Parse(resp.Body)
-	resp.Body.Close()
 	links := make(chan string)
 	go func() {
 		TraverseFind(doc, links)
@@ -74,4 +73,19 @@ func TraverseFind(n *html.Node, ch chan string) {
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		TraverseFind(c, ch)
 	}
+}
+
+func ArgsInit() {
+	flag.StringVarP(&login, "login", "l", "", "User login for HSE OPAC. Required.")
+	flag.StringVarP(&password, "pass", "p", "", "Password for HSE OPAC. Required.")
+	flag.BoolVarP(&dry_run, "dry-run", "n", false, "Do nothing, just print to stdout.")
+	flag.BoolVarP(&help, "help", "h", false, "Print this help message.")
+	flag.Parse()
+}
+
+func DataRequest(data url.Values) *html.Node {
+	resp, _ := http.PostForm(library_link, data)
+	doc, _ := html.Parse(resp.Body)
+	resp.Body.Close()
+	return doc
 }
