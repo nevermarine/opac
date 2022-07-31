@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	flag "github.com/spf13/pflag"
@@ -36,7 +37,11 @@ func main() {
 		login_field:    {login},
 		password_field: {password},
 	}
-	doc := DataRequest(data)
+	doc, err := DataRequest(data)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		return
+	}
 
 	links := make(chan string)
 	go func() {
@@ -52,7 +57,7 @@ func main() {
 		if !dry_run {
 			_, err = http.PostForm(root_url+v, data)
 			if err != nil {
-				fmt.Println("Failed to renew the book.")
+				fmt.Fprintln(os.Stderr, "Error:", err)
 			} else {
 				fmt.Println("Successfully renewed the book.")
 			}
@@ -83,9 +88,15 @@ func ArgsInit() {
 	flag.Parse()
 }
 
-func DataRequest(data url.Values) *html.Node {
-	resp, _ := http.PostForm(library_link, data)
-	doc, _ := html.Parse(resp.Body)
+func DataRequest(data url.Values) (*html.Node, error) {
+	resp, err := http.PostForm(library_link, data)
+	if err != nil {
+		return nil, err
+	}
+	doc, err := html.Parse(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	resp.Body.Close()
-	return doc
+	return doc, nil
 }
