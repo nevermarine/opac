@@ -55,12 +55,13 @@ func main() {
 			break
 		}
 		if !dry_run {
-			_, err = http.PostForm(root_url+v, data)
+			resp, err := http.PostForm(root_url+v, data)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "Error:", err)
 			} else {
 				fmt.Println("Successfully renewed the book.")
 			}
+			defer resp.Body.Close()
 		} else {
 			fmt.Printf("Renewal link: %s\n", root_url+v)
 		}
@@ -93,10 +94,10 @@ func DataRequest(data url.Values) (*html.Node, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	doc, err := html.Parse(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
 	return doc, nil
 }
