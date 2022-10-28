@@ -44,6 +44,6 @@ Successfully renewed the book.
 ```
 Running this script by hand is rather inconvinient, so you probably want to add it to your crontab. Sample crontab string:
 ```shell
-# every 1st and 15th day of the month at 12:10 PM
+# every Tuesday at 11:15 AM
 15 11 * * 2 opac -l 111111 -p TotallyRealName
 ```
